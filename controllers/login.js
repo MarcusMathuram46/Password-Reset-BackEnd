@@ -3,7 +3,8 @@ const User = require('../models/user');
 const jwt = require('jsonwebtoken');
 const { JWT_SECRET } = require('../utils/config');
 const PasswordReset = require('../models/PasswordReset');
-const nodemailer = require('nodemailer');
+const sendEmail = require('../utils/email');
+
 const loginRouter = require('express').Router();
 
 loginRouter.post('/', async (req, res) => {
@@ -13,13 +14,13 @@ loginRouter.post('/', async (req, res) => {
         const user = await User.findOne({ username });
 
         if (!user) {
-            return res.status(401).json({ message: 'Invalid username' });
+            return res.status(401).json({ error: 'Invalid username or password' });
         }
 
         const passwordMatch = await bcrypt.compare(password, user.passwordHash);
 
         if (!passwordMatch) {
-            return res.status(401).json({ message: 'Invalid  password' });
+            return res.status(401).json({ error: 'Invalid username or password' });
         }
 
         const payload = {
@@ -37,49 +38,40 @@ loginRouter.post('/', async (req, res) => {
         });
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: 'Internal Server Error',error });
+        res.status(500).json({ error: 'Internal Server Error' });
     }
 });
 
 loginRouter.post('/reset-password', async (req, res) => {
-    
-        const { username } = req.body;
+    try {
+        const { email } = req.body;
 
-        const user = await User.findOne({ username });
+        const user = await User.findOne({ username: email });
 
         if (!user) {
-            return res.status(404).json({ message: 'User not found' });
+            return res.status(404).json({ error: 'User not found' });
         }
 
         const randomString = Math.random().toString(36).substring(7);
 
         await PasswordReset.create({
-            email:username,
+            email,
             randomString,
         });
 
-        const transporter=nodemailer.createTransport({
-        service:'gmail',
-        auth: {
-            user: '143.lovvable@gmail.com',
-            pass: 'fnmxhibtwjgdzajq'
-        },
-    })
+        const resetLink = `http://localhost:3000/login/reset-password?email=${email}&randomString=${randomString}`;
 
-    const message = {
-        from: '143.lovvable@gmail.com',
-        to: user.username,
-        subject: 'Password Reset',
-        text:`You are requested to change the password of user login ,So please enter this otp key = ${randomString}`
+        await sendEmail({
+            email,
+            subject: 'Password Reset',
+            message: `Click the following link to reset your password: ${resetLink}`,
+        });
+
+        res.status(200).json({ message: 'Password reset link sent successfully' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Internal Server Error' });
     }
-
-    transporter.sendMail(message, (err, info) => {
-        if (err) {
-            res.status(404).json({ message: "something went wrong,try again !" });
-        }
-        res.status(200).json({ message: "Email sent successfully" , info });
-    })
-    
 });
 
 loginRouter.post('/complete-reset', async (req, res) => {
@@ -89,7 +81,7 @@ loginRouter.post('/complete-reset', async (req, res) => {
         const passwordResetData = await PasswordReset.findOne({ email, randomString });
 
         if (!passwordResetData) {
-            return res.status(401).json({ message: 'Invalid random string' });
+            return res.status(401).json({ error: 'Invalid random string' });
         }
 
         const hashedPassword = await bcrypt.hash(newPassword, 10);
@@ -101,7 +93,7 @@ loginRouter.post('/complete-reset', async (req, res) => {
         );
 
         if (!updatedUser) {
-            return res.status(404).json({ message: 'User not found' });
+            return res.status(404).json({ error: 'User not found' });
         }
 
         await PasswordReset.deleteOne({ email, randomString });
@@ -109,7 +101,7 @@ loginRouter.post('/complete-reset', async (req, res) => {
         return res.status(200).json({ message: 'Password reset successful' });
     } catch (error) {
         console.error(error);
-        return res.status(500).json({ message: 'Internal Server Error',error });
+        return res.status(500).json({ error: 'Internal Server Error' });
     }
 });
 
