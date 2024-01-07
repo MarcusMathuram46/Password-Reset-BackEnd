@@ -12,7 +12,7 @@ app.use(cors());
 app.use(express.json());
 
 console.log("Connecting to MongoDB...");
-mongoose.connect(MONGODB_URI || 'YOUR_DEFAULT_CONNECTION_STRING', {
+mongoose.connect(MONGODB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 })
@@ -28,3 +28,11 @@ mongoose.connect(MONGODB_URI || 'YOUR_DEFAULT_CONNECTION_STRING', {
 
 app.use('/user', userRouter);
 app.use('/login', loginRouter);
+
+app.use((err, req, res, next) => {
+  // Handle errors gracefully
+  console.error(err.stack);
+  res.status(500).send('Something went wrong!');
+});
+
+module.exports = app;
