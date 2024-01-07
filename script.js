@@ -16,15 +16,15 @@ mongoose.connect(MONGODB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 })
-  .then(() => {
-    info("Connected to MongoDB ...");
-    app.listen(PORT, () => {
-      info(`Server is running at http://localhost:${PORT}`);
-    });
-  })
-  .catch((error) => {
-    err("Error", error);
+.then(() => {
+  info("Connected to MongoDB ...");
+  app.listen(PORT, () => {
+    info(`Server is running at http://localhost:${PORT}`);
   });
+})
+.catch((error) => {
+  err("Error connecting to MongoDB:", error);
+});
 
 app.use('/user', userRouter);
 app.use('/login', loginRouter);
