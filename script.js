@@ -13,8 +13,10 @@ app.use(express.json());
 
 console.log("Connecting to MongoDB...");
 mongoose.connect(MONGODB_URI, {
-  useNewUrlParser: true,
+  // Remove deprecated options and handle new connection settings
   useUnifiedTopology: true,
+  useNewUrlParser: true,
+  useCreateIndex: true, // New option to handle deprecation warning for collection.ensureIndex
 })
   .then(() => {
     info("Connected to MongoDB...");
@@ -29,6 +31,9 @@ mongoose.connect(MONGODB_URI, {
 app.use('/user', userRouter);
 app.use('/login', loginRouter);
 
+// Additional route handlers or middleware can be added here
+
+// Example error handling middleware
 app.use((err, req, res, next) => {
   // Handle errors gracefully
   console.error(err.stack);
