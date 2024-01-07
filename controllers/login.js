@@ -5,7 +5,6 @@ const { JWT_SECRET } = require('../utils/config');
 const PasswordReset = require('../models/PasswordReset');
 const sendEmail = require('../utils/email');
 
-const express = require('express');
 const loginRouter = require('express').Router();
 
 loginRouter.post('/', async (req, res) => {
