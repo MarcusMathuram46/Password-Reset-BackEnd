@@ -1,7 +1,7 @@
 require('dotenv').config();
 const mongoose = require('mongoose');
 const express = require('express');
-const { MONGODB_URI, PORT } = require('./utils/config');
+const { PORT } = require('./utils/config');
 const { info, err } = require('./utils/logger');
 const cors = require('cors');
 const loginRouter = require('./controllers/login');
@@ -12,6 +12,8 @@ const app = express();
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/defaultDB'; // Providing a default URI
 
 console.log('Connecting to MongoDB...');
 
