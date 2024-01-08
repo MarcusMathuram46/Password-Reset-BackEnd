@@ -1,8 +1,8 @@
 require('dotenv').config();
 const mongoose = require('mongoose');
 const express = require('express');
-const { PORT } = require('./utils/config');
-const { info, err } = require('./utils/logger');
+const { PORT, MONGODB_URI } = require('./utils/config');
+const { info, error } = require('./utils/logger');
 const cors = require('cors');
 const loginRouter = require('./controllers/login');
 const userRouter = require('./controllers/register');
@@ -13,12 +13,15 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/defaultDB'; // Providing a default URI
-
 console.log('Connecting to MongoDB...');
 
 mongoose
-  .connect(MONGODB_URI)
+  .connect(MONGODB_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    useCreateIndex: true,
+    useFindAndModify: false,
+  })
   .then(() => {
     info('Connected to MongoDB...');
     // Define routes
@@ -27,6 +30,7 @@ mongoose
 
     // Error handling middleware
     app.use((err, req, res, next) => {
+      error('Error:', err);
       err.statusCode = err.statusCode || 500;
       res.status(err.statusCode).json({
         error: {
@@ -41,7 +45,7 @@ mongoose
     });
   })
   .catch((error) => {
-    err('Error connecting to MongoDB:', error);
+    error('Error connecting to MongoDB:', error);
     // Terminate the process or handle the error accordingly
     process.exit(1);
   });
